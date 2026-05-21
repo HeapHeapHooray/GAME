@@ -1,5 +1,7 @@
 # GAME: Generative Adaptive MIDI Extractor
 
+[Technical Report](ALGORITHMS.md)
+
 ## Overview
 
 GAME is the upgraded successor of [SOME](https://github.com/openvpi/SOME), designed for transcribing singing voice into music scores.
