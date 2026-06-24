@@ -8,6 +8,41 @@ import torch.utils.data
 from inference.slicer2 import Slicer
 from inference.utils import validate_phones, parse_words
 from training.data import collate_nd
+import tempfile
+import subprocess
+import os
+import soundfile as sf
+
+
+def safe_load_audio(filepath, sr):
+    use_ffmpeg = False
+    try:
+        info = sf.info(filepath)
+        if info.frames > 10**12:
+            use_ffmpeg = True
+    except Exception:
+        use_ffmpeg = True
+
+    if not use_ffmpeg:
+        try:
+            waveform, _ = librosa.load(filepath, sr=sr, mono=True)
+            return waveform
+        except Exception:
+            use_ffmpeg = True
+
+    if use_ffmpeg:
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", str(filepath), "-ar", str(sr), "-ac", "1", "-f", "wav", tmp_path],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+            )
+            waveform, _ = librosa.load(tmp_path, sr=sr, mono=True)
+            return waveform
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
 
 class SlicedAudioFileIterableDataset(torch.utils.data.IterableDataset):
@@ -32,8 +67,10 @@ class SlicedAudioFileIterableDataset(torch.utils.data.IterableDataset):
             start = worker.id
             step = worker.num_workers
         for key, filepath in items[start::step]:
-            waveform, _ = librosa.load(filepath, sr=self.samplerate, mono=True)
+            waveform = safe_load_audio(filepath, self.samplerate)
             chunks = self.slicer.slice(waveform)
+            if not chunks:
+                chunks = [{"offset": 0.0, "waveform": waveform}]
             num_parts = len(chunks)
             for chunk in chunks:
                 chunk_wav = torch.from_numpy(chunk["waveform"]).float()
@@ -144,7 +181,7 @@ class DiffSingerTranscriptionsDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         item = self.itemlist[idx]
-        waveform, _ = librosa.load(item["wav_fn"], sr=self.samplerate, mono=True)
+        waveform = safe_load_audio(item["wav_fn"], self.samplerate)
         known_durations = torch.FloatTensor(item["word_dur"])
         return {
             "index": item["index"],
