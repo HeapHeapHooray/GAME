@@ -1,7 +1,8 @@
 # GAME: Generative Adaptive MIDI Extractor (Patched Fork)
 
 > [!NOTE]
-> This is a fork of the original [openvpi/GAME](https://github.com/openvpi/GAME) repository containing a patched [inference/data.py](inference/data.py). 
+> This is a fork of the original [openvpi/GAME](https://github.com/openvpi/GAME) repository containing a patched [inference/data.py](inference/data.py).   
+> **For the Rust reimplementation, go to [GAME.rs](https://github.com/HeapHeapHooray/GAME.rs)**
 > 
 > **Patches Included:**
 > 1. **Robust Audio Loading (`safe_load_audio`)**: Resolves the soundfile `ValueError: array is too big` crash when reading streams or files with missing/infinite length headers (like real-time microphone FLAC recordings) by automatically fallback-transcoding them on the fly using `ffmpeg`.
