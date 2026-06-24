@@ -1,8 +1,16 @@
-# GAME: Generative Adaptive MIDI Extractor
+# GAME: Generative Adaptive MIDI Extractor (Patched Fork)
+
+> [!NOTE]
+> This is a fork of the original [openvpi/GAME](https://github.com/openvpi/GAME) repository containing a patched [inference/data.py](inference/data.py). 
+> 
+> **Patches Included:**
+> 1. **Robust Audio Loading (`safe_load_audio`)**: Resolves the soundfile `ValueError: array is too big` crash when reading streams or files with missing/infinite length headers (like real-time microphone FLAC recordings) by automatically fallback-transcoding them on the fly using `ffmpeg`.
+> 2. **Slicer Fallback**: If an audio file is very short or extremely quiet (amplitude below the `-40 dB` threshold), the slicer would normally return 0 chunks causing the program to exit silently. The code now falls back to processing the full waveform as a single chunk.
 
 [Technical Report](ALGORITHMS.md) · [CacheDiT acceleration](CACHE_DIT.md)
 
 ## Overview
+
 
 GAME is the upgraded successor of [SOME](https://github.com/openvpi/SOME), designed for transcribing singing voice into music scores.
 
